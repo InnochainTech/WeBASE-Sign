@@ -22,7 +22,10 @@ import com.webank.webase.sign.exception.BaseException;
 import com.webank.webase.sign.pojo.po.UserInfoPo;
 import com.webank.webase.sign.pojo.vo.ReqEncodeInfoVo;
 import com.webank.webase.sign.pojo.vo.ReqSignMessageHashVo;
+import com.webank.webase.sign.util.AesUtils;
 import com.webank.webase.sign.util.CommonUtils;
+
+import java.security.PrivateKey;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
@@ -58,6 +61,10 @@ public class SignService {
     @Qualifier(value = "ecdsa")
     private CryptoSuite ecdsaCryptoSuite;
 
+    @Autowired
+    private AesUtils aesUtils;
+
+
     /**
      * add sign.
      * @param req parameter
@@ -77,6 +84,7 @@ public class SignService {
         int encryptType = userRow.getEncryptType();
         // signature
         CryptoKeyPair cryptoKeyPair = keyStoreService.getKeyPairByType(userRow.getPrivateKey(), encryptType);
+        System.out.println(cryptoKeyPair.getHexPublicKey());
         // make sure hex
         byte[] encodedData;
         try {
@@ -88,13 +96,19 @@ public class SignService {
         }
         Instant startTime = Instant.now();
         log.info("start sign. startTime:{}", startTime.toEpochMilli());
+        //官方代码从这里开始报错了
         // sign message by type
-        SignatureResult signatureResult = signMessageByType(
-                encodedData, cryptoKeyPair, encryptType);
-        log.info("end sign duration:{}", Duration.between(startTime, Instant.now()).toMillis());
-        String signDataStr = CommonUtils.signatureResultToStringByType(signatureResult, encryptType);
+        // SignatureResult signatureResult = signMessageByType(
+        //         encodedData, cryptoKeyPair, encryptType);
+        // log.info("end sign duration:{}", Duration.between(startTime, Instant.now()).toMillis());
+        // String signDataStr = CommonUtils.signatureResultToStringByType(signatureResult, encryptType);
+        // log.info("end sign. signUserId:{}", signUserId);
+        // return signDataStr;
+
+        // 这里cryptoSuite的实现 需要用crytoType适配国密和ECDSA
+        SignatureResult signatureResult = encryptType == 0?ecdsaCryptoSuite.sign(encodedData, cryptoKeyPair):smCryptoSuite.sign(encodedData, cryptoKeyPair);
         log.info("end sign. signUserId:{}", signUserId);
-        return signDataStr;
+        return signatureResult.convertToString();
     }
 
     public SignatureResult signMessageByType(byte[] message, CryptoKeyPair cryptoKeyPair,

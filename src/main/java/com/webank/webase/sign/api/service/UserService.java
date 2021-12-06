@@ -74,7 +74,8 @@ public class UserService {
             String privateKey;
             // decode base64 as raw private key
             try {
-                privateKey = new String(CommonUtils.base64Decode(privateKeyEncoded));
+                privateKey = aesUtils.aesDecrypt(privateKeyEncoded);
+                // privateKey = new String(CommonUtils.base64Decode(privateKeyEncoded));
                 keyStoreInfo = keyStoreService.getKeyStoreFromPrivateKey(privateKey, encryptType);
             } catch (Exception ex) {
                 log.error("newUser privatekey encoded format error：{}", privateKeyEncoded);
