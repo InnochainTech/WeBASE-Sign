@@ -34,5 +34,5 @@ gradle.properties
 /log
 /dist
 
-application-test.yml
+application.yml
 
